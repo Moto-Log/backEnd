@@ -1,0 +1,144 @@
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+// Cargo
+model role {
+    id   String @unique @default(uuid()) @db.VarChar(36)
+    name String @unique
+    chs  Int
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @default(now())
+
+    employee employee[]
+}
+
+// Usuário (Docente)
+model employee {
+    id           String  @unique @default(uuid()) @db.VarChar(36)
+    name         String
+    registration String  @unique // Matrícula
+    email        String
+    password     String
+    roleId       String  @db.VarChar(36)
+    courseId     String? @db.VarChar(36)
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @default(now())
+
+    preferences   preferences[]
+    courseSubject courseSubject[]
+
+    role   role    @relation(fields: [roleId], references: [id])
+    course course? @relation(fields: [courseId], references: [id])
+}
+
+// Preferências
+model preferences {
+    id         String @unique @default(uuid()) @db.VarChar(36)
+    type       String
+    value      String
+    employeeId String @db.VarChar(36)
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @default(now())
+
+    employee employee @relation(fields: [employeeId], references: [id])
+}
+
+// Área geral
+model area {
+    id   String @unique @default(uuid()) @db.VarChar(36)
+    name String @unique
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @default(now())
+
+    subarea subarea[]
+}
+
+// Subarea
+model subarea {
+    id     String @unique @default(uuid()) @db.VarChar(36)
+    name   String @unique
+    areaId String @db.VarChar(36)
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @default(now())
+
+    subjectSubarea subjectSubarea[]
+
+    area area @relation(fields: [areaId], references: [id])
+}
+
+// Disciplina
+model subject {
+    id   String @unique @default(uuid()) @db.VarChar(36)
+    name String @unique
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @default(now())
+
+    courseSubject  courseSubject[]
+    subjectSubarea subjectSubarea[]
+}
+
+// Relacionemtno entre discplina e subarea
+model subjectSubarea {
+    id        String @unique @default(uuid()) @db.VarChar(36)
+    subjectId String @db.VarChar(36)
+    subareaId String @db.VarChar(36)
+
+    subject subject @relation(fields: [subjectId], references: [id])
+    subarea subarea @relation(fields: [subareaId], references: [id])
+}
+
+// Curso
+model course {
+    id        String   @unique @default(uuid()) @db.VarChar(36)
+    name      String   @unique
+    shift     String   @db.VarChar(1) // Turno
+    modality  String   @db.VarChar(1) // Modalidade (INTEGRADO, SUBSQUENTE, TÉCNOLOGO, GRADUAÇÃO)
+    createdAt DateTime @default(now())
+    updatedAt DateTime @default(now())
+
+    courseSubject courseSubject[]
+    employee      employee[]
+}
+
+// Relacionamento que representa uma determinada disciplina aplicada em
+// determinado curso e lecionada por determinado docente
+model courseSubject {
+    id     String @unique @default(uuid()) @db.VarChar(36)
+    period Int
+    chs    Int
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @default(now())
+
+    courseId   String  @db.VarChar(36)
+    subjectId  String  @db.VarChar(36)
+    employeeId String? @db.VarChar(36)
+
+    employee employee? @relation(fields: [employeeId], references: [id])
+    course   course    @relation(fields: [courseId], references: [id])
+    subject  subject   @relation(fields: [subjectId], references: [id])
+}
+
+// Configurações do Sistema
+// Caso de Uso: determinar o período (data) nas quais o processo ficará aberto
+model sysconfig {
+    id    String @unique @default(uuid()) @db.VarChar(36)
+    name  String @unique
+    type  String
+    value String
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @default(now())
+}
